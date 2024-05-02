@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanical Equipment</title>
+    <link href="{% static 'mechanical/styles.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#" style="color: white;">Mechanical</a>
+    </nav>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card widget" id="card">
+                    <div class="card-body">
+                        <div style="display: flex;">
+                            <h5 class="card-title text-uppercase">Mechanical</h5>
+                            <div class="led-box">
+                                <div class="led-green"></div>
+                            </div>
+                        </div>
+                        <div id="widgetGraph" style="height: 16rem; text-align: center;"><br>
+                            <h3 id="chartTitle">PAC</h3>
+                            <!-- Graph would be implemented here, possibly with JavaScript -->
+                            <div id="chart" style="width: 100%; height: 11rem;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Modal -->
+    <div class="modal fade" id="equipmentDetailsModal" tabindex="-1" aria-labelledby="equipmentDetailsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="equipmentDetailsModalLabel">Equipment Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Bootstrap Table to show equipment details -->
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Equipment</th>
+                                <th scope="col">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="equipmentDetailsTableBody">
+                            <!-- Equipment details will be dynamically added here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+    <script>
+        // Declare myChart as a global variable
+        var myChart;
+
+        // Function to process the hardcoded data and update the chart
+        // Hardcoded sample data
+        var sampleData = [
+            { "Equipment": "PAC-L01-01", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-02", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-03", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-04", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-05", "Status": 0, "Fault": 0 },
+            { "Equipment": "PAC-L01-06", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-07", "Status": 0, "Fault": 1 },
+            { "Equipment": "PAC-L01-08", "Status": 0, "Fault": 0 },
+            { "Equipment": "PAC-L01-09", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-10", "Status": 0, "Fault": 1 },
+            { "Equipment": "PAC-L01-11", "Status": 0, "Fault": 0 },
+            { "Equipment": "PAC-L01-12", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-13", "Status": 1, "Fault": 0 },
+            { "Equipment": "PAC-L01-14", "Status": 0, "Fault": 0 },
+        ];
+
+        // Number of running equipments (Status: 1)
+        var runningCount = sampleData.filter(function (item) {
+            return item.Status === 1;
+        }).length;
+
+        // Number of closed equipments (Status: 0) excluding those in fault (Fault: 1)
+        var closedCount = sampleData.filter(function (item) {
+            return item.Status === 0 && item.Fault === 0;
+        }).length;
+
+        // Number of equipments in fault (Fault: 1)
+        var faultCount = sampleData.filter(function (item) {
+            return item.Fault === 1;
+        }).length;
+
+        // Total number of equipments
+        var totalEquipments = sampleData.length;
+
+        // Generate chart options based on equipment counts
+        var chartOptions = generateChartOptions(runningCount, closedCount, faultCount, totalEquipments);
+
+        // Function to generate chart options based on equipment counts
+        function generateChartOptions(runningCount, closedCount, faultCount, totalEquipments) {
+            // Chart data with appropriate colors for running, closed, and fault equipments
+            var seriesData = [
+                { value: runningCount, name: 'Running', itemStyle: { color: '#6B92C9' } },
+                { value: closedCount, name: 'Closed', itemStyle: { color: '#D1D1D1' } },
+                { value: faultCount, name: 'Fault', itemStyle: { color: '#FF6E4C' } }
+            ];
+
+            // Calculate the count for the title
+            var titleCount = runningCount + '/' + totalEquipments + '\n' + 'Running';
+
+            // Return chart options
+            return {
+                title: {
+                    text: titleCount,
+                    left: 'center',
+                    top: 'center', // Position title in the middle of the chart
+                    textStyle: {
+                        fontSize: 16 // Adjust font size if needed
+                    }
+                },
+                series: [
+                    {
+                        type: 'pie',
+                        radius: ['75%', '90%'],
+                        avoidLabelOverlap: false,
+                        label: {
+                            show: false,
+                            position: 'center',
+
+                        },
+                        emphasis: {
+                            label: {
+                                show: false,
+                                fontSize: '14',
+                                fontWeight: 'bold'
+                            }
+                        },
+                        labelLine: {
+                            show: false
+                        },
+                        data: seriesData
+                    }
+                ]
+            };
+        }
+
+        // Function to render the chart using ECharts
+        function renderChart(chartOptions) {
+            var chartElement = document.getElementById('chart');
+            myChart = echarts.init(chartElement);
+            myChart.setOption(chartOptions);
+
+            // Add click event listener to chart series
+            myChart.on('click', function (params) {
+                var category = params.name;
+                var count;
+
+                // Determine count based on clicked category
+                switch (category) {
+                    case 'Running':
+                        count = runningCount;
+                        document.getElementById('chartTitle').innerHTML = '<h3>PAC</h3>';
+                        document.getElementById('card').style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                        break;
+                    case 'Closed':
+                        count = closedCount;
+                        document.getElementById('chartTitle').innerHTML = '<h3>PAC</h3>';
+                        document.getElementById('card').style.boxShadow = '0 8px 16px rgba(0,0,0,0.2)';
+                        break;
+                    case 'Fault':
+                        count = faultCount;
+                        // Change text in <h3> element based on category clicked
+                        document.getElementById('chartTitle').innerHTML = '<h3>FCU-VAV</h3>';
+                        document.getElementById('card').style.boxShadow = '0 8px 16px rgba(255,0,0,0.6)';
+                        break;
+                    default:
+                        count = 0;
+                }
+
+                // Update chart title to display name and count of clicked category
+                myChart.setOption({
+                    title: {
+                        text: count + '/' + totalEquipments + '\n' + category
+                    }
+                });
+
+                // Show modal with equipment details
+                $('#equipmentDetailsModal').modal('show');
+
+                // Populate equipment details table
+                var modalBody = document.getElementById('equipmentDetailsTableBody');
+                modalBody.innerHTML = ''; // Clear previous data
+                sampleData.forEach(function (item) {
+                    if (item.Status === 1 && category === 'Running') {
+                        var row = '<tr><td>' + item.Equipment + '</td><td>Running</td></tr>';
+                        modalBody.innerHTML += row;
+                    } else if (item.Status === 0 && item.Fault === 0 && category === 'Closed') {
+                        var row = '<tr><td>' + item.Equipment + '</td><td>Closed</td></tr>';
+                        modalBody.innerHTML += row;
+                    } else if (item.Fault === 1 && category === 'Fault') {
+                        var row = '<tr><td>' + item.Equipment + '</td><td>Fault</td></tr>';
+                        modalBody.innerHTML += row;
+                    }
+                });
+            });
+        }
+
+        // Call the function to render the chart with data and event listener
+        renderChart(chartOptions);
+    </script>
+</body>
+
+</html>
