@@ -5,6 +5,7 @@ body {
 .navbar {
     background: linear-gradient(to right, #007bff, #00c0ff); /* Simple gradient effect */
     color: white;
+    justify-content: center;
 }
 .navbar-light .navbar-brand {
     color: white;
